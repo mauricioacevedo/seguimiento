@@ -1,0 +1,103 @@
+<!-- Copyright (c) 2002 by ObjectLearn. All Rights Reserved. -->
+<project name="sapeWeb"  default="init"  basedir=".">
+
+
+  <!-- set global properties for this build -->
+  <property file="build.properties"/>
+
+	<!-- Se da la ruta de los jar necesarios para Xdoclet -->
+	<path id="xdoclet.path">
+		<fileset dir="${basedir}/lib/xdoclet1.2.3">
+			<include name="**/*.jar"/>
+		</fileset>		
+	</path>
+	
+	
+  <target name="init">
+  	<delete dir="${deploy.dir}/${war}"/>
+  	<mkdir dir="${deploy.dir}/${war}"/>
+    <mkdir dir="${deploy.dir}/${war}/WEB-INF/classes"/>
+    <mkdir dir="${deploy.dir}/${war}/WEB-INF/lib"/>
+  	<antcall target="deploy" />
+  </target>
+
+
+  
+  <target name="deploy">
+  	<copy todir="${deploy.dir}/${war}">
+      <fileset dir="${web}">
+        <include name="**/*.*"/>
+        <exclude name="**/jsp_servlet/*.class"/>
+        <exclude name="**/build.xml"/>
+        <exclude name="**/deploy.xml"/>
+        <exclude name="**/build.properties"/>
+        <exclude name="**/servers.xml"/>
+        <exclude name="**/targets.xml"/>
+        <exclude name="**/*.war"/>
+      </fileset>
+    </copy>
+    <copy todir="${deploy.dir}/${war}/WEB-INF/classes">
+      <fileset dir="${project.dir}/${bin.dir}">
+        <include name="**/*.*"/>
+        <exclude name="**/jsp_servlet/*.class"/>
+      </fileset>
+    </copy>
+    <copy todir="${deploy.dir}/${war}/WEB-INF/lib">
+      <fileset dir="${project.dir}/lib">
+        <include name="**/*.*"/>
+        <exclude name="**/*src*"/>
+      	<exclude name="**/xdoclet1.2.3/"/>
+      </fileset>
+    </copy>
+  </target>
+
+    <target name="generarHBM">
+        <taskdef name="hibernatedoclet" classname="xdoclet.modules.hibernate.HibernateDocletTask" classpathref="xdoclet.path" />
+    	<hibernatedoclet destDir="src" verbose="true" force="false">
+    		<fileset dir="src/"  includes="**/*.java" />
+    		<hibernatecfg jdbcUrl="jdbc:postgresql://192.168.0.124/ipe"  showSql="false"  
+    			dialect="net.sf.hibernate.dialect.PostgreSQLDialect"  driver="org.postgresql.Driver"  
+    			userName="sape_web"  password="Animo"  destDir="src">
+    		</hibernatecfg>
+    		<hibernate Version="2.0" />
+    	</hibernatedoclet>
+    </target>
+	
+    <target name="montarServerSape">
+    	<!--ftp action="del" server="${serverSape}" remotedir="${dirSape}" userid="${userSape}" password="${passwordSape}" verbose="yes">
+    	      <fileset dir="${deploy.dir}/${war}">
+    	        <include name="**/*.*"/>
+    	      </fileset>		
+    	</ftp-->
+    	<ftp server="${serverSape}" remotedir="${dirSape}" userid="${userSape}" password="${passwordSape}" verbose="yes">
+    	      <fileset dir="${deploy.dir}/${war}">
+    	        <include name="**/*.*"/>
+    	        <exclude name="**/*evaluacionResultados.xml"/>
+    	        <exclude name="**/*config-servicios*"/>
+       	        <exclude name="**/*configuracionCliente*"/>  	
+       	        <exclude name="**/*codigosFalla.xml*"/>
+    	      </fileset>
+    	</ftp>
+    </target>
+
+
+    <target name="compilar">
+        <javac srcdir="${basedir}/src" destdir="${basedir}/bin">
+            <classpath>
+                <pathelement location="/usr/java/tomcat/common/lib/servlet-api.jar" />
+                <pathelement location="${basedir}/lib" />
+                    <fileset dir="${basedir}/lib/">
+                        <include name="**/*.jar" />
+                    </fileset>
+            </classpath>
+        </javac>
+        <!-- copio todo lo que es diferente a .java (xml) a bin -->
+        <copy todir="${basedir}/bin">
+            <fileset dir="${basedir}/src">
+                <include name="**/*.*" />
+                <exclude name="**/*.java" />
+            </fileset>
+        </copy>
+    </target>
+
+</project>
